@@ -1,6 +1,7 @@
 ﻿using System.Net.Sockets;
 using System.IO;
 using System;
+using System.Text;
 
 namespace QuickFix
 {
@@ -12,11 +13,12 @@ namespace QuickFix
     {
         public const int BUF_SIZE = 4096;
         byte[] readBuffer_ = new byte[BUF_SIZE];
-        private Parser parser_ = new Parser();
+        private Parser parser_;
         private Session qfSession_; //will be null when initialized
         private Stream stream_;     //will be null when initialized
         private TcpClient tcpClient_;
         private ClientHandlerThread responder_;
+        private Encoding encoding_;
 
         /// <summary>
         /// Keep a handle to the current outstanding read request (if any)
@@ -31,6 +33,8 @@ namespace QuickFix
 
         public SocketReader(TcpClient tcpClient, SocketSettings settings, ClientHandlerThread responder)
         {
+            parser_ = new Parser(settings.Encoding);
+            encoding_ = settings.Encoding;
             tcpClient_ = tcpClient;
             responder_ = responder;
             stream_ = Transport.StreamFactory.CreateServerStream(tcpClient, settings, responder.GetLog());
@@ -43,7 +47,7 @@ namespace QuickFix
             {
                 int bytesRead = ReadSome(readBuffer_, 1000);
                 if (bytesRead > 0)
-                    parser_.AddToStream(System.Text.Encoding.UTF8.GetString(readBuffer_, 0, bytesRead));
+                    parser_.AddToStream(encoding_.GetString(readBuffer_, 0, bytesRead));
                 else if (null != qfSession_)
                 {
                     qfSession_.Next();
@@ -73,7 +77,7 @@ namespace QuickFix
         /// <exception cref="System.Net.Sockets.SocketException">On connection reset</exception>
         protected virtual int ReadSome(byte[] buffer, int timeoutMilliseconds)
         {
-            // NOTE: THIS FUNCTION IS EXACTLY THE SAME AS THE ONE IN SocketReader any changes here should 
+            // NOTE: THIS FUNCTION IS EXACTLY THE SAME AS THE ONE IN SocketReader any changes here should
             // also be performed there
             try
             {
@@ -86,7 +90,7 @@ namespace QuickFix
 
                 if (currentReadRequest_.IsCompleted)
                 {
-                    // Make sure to set currentReadRequest_ to before retreiving result 
+                    // Make sure to set currentReadRequest_ to before retreiving result
                     // so a new read can be started next time even if an exception is thrown
                     var request = currentReadRequest_;
                     currentReadRequest_ = null;
@@ -105,7 +109,7 @@ namespace QuickFix
                 var inner = ex.InnerException as SocketException;
                 if (inner != null && inner.SocketErrorCode == SocketError.TimedOut)
                 {
-                    // Nothing read 
+                    // Nothing read
                     return 0;
                 }
                 else if (inner != null)
@@ -304,7 +308,7 @@ namespace QuickFix
 
         public int Send(string data)
         {
-            byte[] rawData = System.Text.Encoding.UTF8.GetBytes(data);
+            byte[] rawData = encoding_.GetBytes(data);
             stream_.Write(rawData, 0, rawData.Length);
             return rawData.Length;
         }

@@ -114,7 +114,7 @@ namespace QuickFix
         {
             if (_fields.ContainsKey(field.Tag) && !overwrite)
                 return false;
-            
+
             SetField(field);
             return true;
         }
@@ -365,7 +365,7 @@ namespace QuickFix
         {
             try
             {
-                Fields.IField fld = _fields[tag];                
+                Fields.IField fld = _fields[tag];
                 return DateTimeConverter.ConvertToDateOnly(fld.ToString());
             }
             catch (System.Collections.Generic.KeyNotFoundException)
@@ -548,60 +548,60 @@ namespace QuickFix
             return ((_fields.Count == 0) && (_groups.Count == 0));
         }
 
-        public int CalculateTotal()
+        public int CalculateTotal(Encoding encoding)
         {
             int total = 0;
-            foreach (Fields.IField field in _fields.Values)
+            foreach (IField field in _fields.Values)
             {
-                if (field.Tag != Fields.Tags.CheckSum)
-                    total += field.getTotal();
+                if (field.Tag != Tags.CheckSum)
+                    total += field.getTotal(encoding);
             }
 
-            foreach (Fields.IField field in this.RepeatedTags)
+            foreach (IField field in this.RepeatedTags)
             {
-                if (field.Tag != Fields.Tags.CheckSum)
-                    total += field.getTotal();
+                if (field.Tag != Tags.CheckSum)
+                    total += field.getTotal(encoding);
             }
 
             foreach (List<Group> groupList in _groups.Values)
             {
                 foreach (Group group in groupList)
-                    total += group.CalculateTotal();
+                    total += group.CalculateTotal(encoding);
             }
             return total;
         }
 
-        public int CalculateLength()
+        public int CalculateLength(Encoding encoding)
         {
             int total = 0;
-            foreach (Fields.IField field in _fields.Values)
+            foreach (IField field in _fields.Values)
             {
                 if (field != null
                     && field.Tag != Tags.BeginString
                     && field.Tag != Tags.BodyLength
                     && field.Tag != Tags.CheckSum)
                 {
-                    total += field.getLength();
+                    total += field.getLength(encoding);
                 }
             }
 
-            foreach (Fields.IField field in this.RepeatedTags)
+            foreach (IField field in this.RepeatedTags)
             {
                 if (field != null
                     && field.Tag != Tags.BeginString
                     && field.Tag != Tags.BodyLength
                     && field.Tag != Tags.CheckSum)
                 {
-                    total += field.getLength();
+                    total += field.getLength(encoding);
                 }
             }
 
             foreach (List<Group> groupList in _groups.Values)
             {
                 foreach (Group group in groupList)
-                    total += group.CalculateLength();
+                    total += group.CalculateLength(encoding);
             }
-    
+
             return total;
         }
 
@@ -616,7 +616,7 @@ namespace QuickFix
         public virtual string CalculateString(StringBuilder sb, int[] preFields)
         {
             HashSet<int> groupCounterTags = new HashSet<int>(_groups.Keys);
-            
+
             foreach (int preField in preFields)
             {
                 if (IsSetField(preField))

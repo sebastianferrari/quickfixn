@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using QuickFix.Fields;
+using System.Text;
 
 namespace QuickFix
 {
     /// <summary>
-    /// The Session is the primary FIX abstraction for message communication. 
+    /// The Session is the primary FIX abstraction for message communication.
     /// It performs sequencing and error recovery and represents a communication
     /// channel to a counterparty. Sessions are independent of specific communication
     /// layer connections. A Session is defined as starting with message sequence number
@@ -121,7 +122,7 @@ namespace QuickFix
 
         // unsynchronized properties
         /// <summary>
-        /// Whether to persist messages or not. Setting to false forces quickfix 
+        /// Whether to persist messages or not. Setting to false forces quickfix
         /// to always send GapFills instead of resending messages.
         /// </summary>
         public bool PersistMessages { get; set; }
@@ -194,6 +195,7 @@ namespace QuickFix
         public DataDictionaryProvider DataDictionaryProvider { get; set; }
         public DataDictionary.DataDictionary SessionDataDictionary { get; private set; }
         public DataDictionary.DataDictionary ApplicationDataDictionary { get; private set; }
+        public Encoding Encoding { get; set; }
 
         /// <summary>
         /// Returns whether the Session has a Responder. This method is synchronized
@@ -218,6 +220,7 @@ namespace QuickFix
             this.schedule_ = sessionSchedule;
             this.msgFactory_ = msgFactory;
             this.appDoesEarlyIntercept_ = app is IApplicationExt;
+            this.Encoding = SessionFactory.DefaultEncoding;
 
             this.SenderDefaultApplVerID = senderDefaultApplVerID;
 
@@ -525,7 +528,8 @@ namespace QuickFix
                     this.ValidateLengthAndChecksum,
                     this.SessionDataDictionary,
                     this.ApplicationDataDictionary,
-                    this.msgFactory_);
+                    this.msgFactory_,
+                    this.Encoding);
 
             Next(msgBuilder);
         }
@@ -790,7 +794,7 @@ namespace QuickFix
                         {
 
                             initializeResendFields(msg);
-                            if(!ResendApproved(msg, SessionID)) 
+                            if(!ResendApproved(msg, SessionID))
                             {
                                 continue;
                             }
@@ -1116,7 +1120,7 @@ namespace QuickFix
         {
             // If config RequiresOrigSendingTime=N, then tolerate SequenceReset messages that lack OrigSendingTime (issue #102).
             // (This field doesn't really make sense in this message, so some parties omit it, even though spec requires it.)
-            string msgType = msg.Header.GetField(Fields.Tags.MsgType); 
+            string msgType = msg.Header.GetField(Fields.Tags.MsgType);
             if (msgType == Fields.MsgType.SEQUENCE_RESET && RequiresOrigSendingTime == false)
                 return;
 
@@ -1354,7 +1358,7 @@ namespace QuickFix
         {
             return GenerateReject(msgBuilder.RejectableMessage(), reason, 0);
         }
-       
+
         internal bool GenerateReject(MessageBuilder msgBuilder, FixValues.SessionRejectReason reason, int field)
         {
             return GenerateReject(msgBuilder.RejectableMessage(), reason, field);
@@ -1602,6 +1606,7 @@ namespace QuickFix
         {
             lock (sync_)
             {
+                message.Encoding = this.Encoding;
                 string msgType = message.Header.GetField(Fields.Tags.MsgType);
 
                 InitializeHeader(message, seqNum);
