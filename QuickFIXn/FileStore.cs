@@ -31,21 +31,28 @@ namespace QuickFix
         private System.IO.FileStream msgFile_;
         private System.IO.StreamWriter headerFile_;
 
+        private Encoding encoding_;
+
         private MemoryStore cache_ = new MemoryStore();
 
-        System.Collections.Generic.Dictionary<int, MsgDef> offsets_ = new Dictionary<int, MsgDef>();
+        Dictionary<int, MsgDef> offsets_ = new Dictionary<int, MsgDef>();
 
         public static string Prefix(SessionID sessionID)
         {
-            System.Text.StringBuilder prefix = new System.Text.StringBuilder(sessionID.BeginString)
-                .Append('-').Append(sessionID.SenderCompID);
+            StringBuilder prefix =
+                new StringBuilder(sessionID.BeginString).Append('-').Append(sessionID.SenderCompID);
+
             if (SessionID.IsSet(sessionID.SenderSubID))
                 prefix.Append('_').Append(sessionID.SenderSubID);
+
             if (SessionID.IsSet(sessionID.SenderLocationID))
                 prefix.Append('_').Append(sessionID.SenderLocationID);
+
             prefix.Append('-').Append(sessionID.TargetCompID);
+
             if (SessionID.IsSet(sessionID.TargetSubID))
                 prefix.Append('_').Append(sessionID.TargetSubID);
+
             if (SessionID.IsSet(sessionID.TargetLocationID))
                 prefix.Append('_').Append(sessionID.TargetLocationID);
 
@@ -55,8 +62,10 @@ namespace QuickFix
             return prefix.ToString();
         }
 
-        public FileStore(string path, SessionID sessionID)
+        public FileStore(SessionID sessionID, SessionSettings settings)
         {
+            var path = settings.Get(sessionID).GetString(SessionSettings.FILE_STORE_PATH);
+
             if (!System.IO.Directory.Exists(path))
                 System.IO.Directory.CreateDirectory(path);
 
@@ -66,6 +75,10 @@ namespace QuickFix
             msgFileName_ = System.IO.Path.Combine(path, prefix + ".body");
             headerFileName_ = System.IO.Path.Combine(path, prefix + ".header");
             sessionFileName_ = System.IO.Path.Combine(path, prefix + ".session");
+
+            encoding_ = settings.Get(sessionID).Has(SessionSettings.ENCODING)
+                ? Encoding.GetEncoding(settings.Get(sessionID).GetString(SessionSettings.ENCODING))
+                : SessionFactory.DefaultEncoding;
 
             open();
         }
@@ -183,12 +196,12 @@ namespace QuickFix
                     byte[] msgBytes = new byte[offsets_[i].size];
                     msgFile_.Read(msgBytes, 0, msgBytes.Length);
 
-                    messages.Add(Encoding.UTF8.GetString(msgBytes));
+                    messages.Add(encoding_.GetString(msgBytes));
                 }
             }
 
         }
-        
+
         /// <summary>
         /// Store a message
         /// </summary>
@@ -200,7 +213,7 @@ namespace QuickFix
             msgFile_.Seek(0, System.IO.SeekOrigin.End);
 
             long offset = msgFile_.Position;
-            byte[] msgBytes = Encoding.UTF8.GetBytes(msg);
+            byte[] msgBytes = encoding_.GetBytes(msg);
             int size = msgBytes.Length;
 
             StringBuilder b = new StringBuilder();

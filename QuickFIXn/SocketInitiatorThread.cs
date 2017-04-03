@@ -33,7 +33,7 @@ namespace QuickFix
             initiator_ = initiator;
             session_ = session;
             socketEndPoint_ = socketEndPoint;
-            parser_ = new Parser();
+            parser_ = new Parser(socketSettings.Encoding);
             session_ = session;
             socketSettings_ = socketSettings;
         }
@@ -81,7 +81,7 @@ namespace QuickFix
             {
                 int bytesRead = ReadSome(readBuffer_, 1000);
                 if (bytesRead > 0)
-                    parser_.AddToStream(System.Text.Encoding.UTF8.GetString(readBuffer_, 0, bytesRead));
+                    parser_.AddToStream(socketSettings_.Encoding.GetString(readBuffer_, 0, bytesRead));
                 else if (null != session_)
                 {
                     session_.Next();
@@ -105,7 +105,7 @@ namespace QuickFix
                     else
                         Disconnect();
                 }
-                return false;                    
+                return false;
             }
             catch (System.Exception e)
             {
@@ -132,7 +132,7 @@ namespace QuickFix
         /// <exception cref="System.Net.Sockets.SocketException">On connection reset</exception>
         protected int ReadSome(byte[] buffer, int timeoutMilliseconds)
         {
-            // NOTE: THIS FUNCTION IS EXACTLY THE SAME AS THE ONE IN SocketReader any changes here should 
+            // NOTE: THIS FUNCTION IS EXACTLY THE SAME AS THE ONE IN SocketReader any changes here should
             // also be performed there
             try
             {
@@ -145,7 +145,7 @@ namespace QuickFix
 
                 if (currentReadRequest_.IsCompleted)
                 {
-                    // Make sure to set currentReadRequest_ to before retreiving result 
+                    // Make sure to set currentReadRequest_ to before retreiving result
                     // so a new read can be started next time even if an exception is thrown
                     var request = currentReadRequest_;
                     currentReadRequest_ = null;
@@ -164,7 +164,7 @@ namespace QuickFix
                 var inner = ex.InnerException as SocketException;
                 if (inner != null && inner.SocketErrorCode == SocketError.TimedOut)
                 {
-                    // Nothing read 
+                    // Nothing read
                     return 0;
                 }
                 else if (inner != null)
@@ -189,7 +189,7 @@ namespace QuickFix
 
         public bool Send(string data)
         {
-            byte[] rawData = System.Text.Encoding.UTF8.GetBytes(data);
+            byte[] rawData = socketSettings_.Encoding.GetBytes(data);
             stream_.Write(rawData, 0, rawData.Length);
             return true;
         }

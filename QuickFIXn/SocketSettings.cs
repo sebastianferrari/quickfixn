@@ -19,6 +19,8 @@ namespace QuickFix
         public Nullable<int> SocketReceiveBufferSize;
         public Nullable<int> SocketSendBufferSize;
 
+        public Encoding Encoding { get; private set; }
+
         #region SSL Settings
 
         /// <summary>
@@ -106,20 +108,24 @@ namespace QuickFix
             SslProtocol = SslProtocols.Default;
             CheckCertificateRevocation = true;
             RequireClientCertificate = true;
+            Encoding = SessionFactory.DefaultEncoding;
         }
 
         /// <summary>
         /// Setup socket settings based on setttings specified in dictionary
         /// </summary>
         /// <remarks>
-        /// used "Configure" as name since it is used in a lot of other places, 
-        /// alternative names are ReadSettings or FromDictionary 
+        /// used "Configure" as name since it is used in a lot of other places,
+        /// alternative names are ReadSettings or FromDictionary
         /// </remarks>
         /// <param name="dictionary">the dictionary to read the settings from</param>
         public void Configure(QuickFix.Dictionary dictionary)
         {
             if (dictionary.Has(SessionSettings.SOCKET_NODELAY))
                 SocketNodelay = dictionary.GetBool(SessionSettings.SOCKET_NODELAY);
+
+            if (dictionary.Has(SessionSettings.ENCODING))
+                Encoding = System.Text.Encoding.GetEncoding(dictionary.GetString(SessionSettings.ENCODING));
 
             if (dictionary.Has(SessionSettings.SOCKET_RECEIVE_BUFFER_SIZE))
                 SocketReceiveBufferSize = dictionary.GetInt(SessionSettings.SOCKET_RECEIVE_BUFFER_SIZE);
@@ -145,13 +151,13 @@ namespace QuickFix
             if (dictionary.Has(SessionSettings.SSL_CHECK_CERTIFICATE_REVOCATION))
                 CheckCertificateRevocation = dictionary.GetBool(SessionSettings.SSL_CHECK_CERTIFICATE_REVOCATION);
 
-            // Use setting for client certificate check if one exist 
+            // Use setting for client certificate check if one exist
             // otherwise enable client certificate check if a ca certificate is specified
             if (dictionary.Has(SessionSettings.SSL_REQUIRE_CLIENT_CERTIFICATE))
                 RequireClientCertificate = dictionary.GetBool(SessionSettings.SSL_REQUIRE_CLIENT_CERTIFICATE);
 
-            // Use setting for SSL if one exist 
-            // otherwise enable ssl if certificate path is specified 
+            // Use setting for SSL if one exist
+            // otherwise enable ssl if certificate path is specified
             if (dictionary.Has(SessionSettings.SSL_ENABLE))
                 UseSSL = dictionary.GetBool(SessionSettings.SSL_ENABLE);
             else

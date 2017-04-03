@@ -87,6 +87,7 @@
     <Compile Include="DDFieldTests.cs" />
     <Compile Include="DefaultMessageFactoryTests.cs" />
     <Compile Include="DictionaryTest.cs" />
+    <Compile Include="EncodingTests.cs" />
     <Compile Include="FieldMapTests.cs" />
     <Compile Include="FieldTests.cs" />
     <Compile Include="FileLogTests.cs" />

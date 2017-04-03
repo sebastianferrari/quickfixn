@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 
 namespace QuickFix
 {
@@ -7,6 +8,8 @@ namespace QuickFix
     /// </summary>
     public class SessionFactory
     {
+        public static readonly Encoding DefaultEncoding = Encoding.UTF8;
+
         protected IApplication application_;
         protected IMessageStoreFactory messageStoreFactory_;
         protected ILogFactory logFactory_;
@@ -50,7 +53,7 @@ namespace QuickFix
                     throw new ConfigError("ApplVerID is required for FIXT transport");
                 }
                 defaultApplVerID = Message.GetApplVerID(settings.GetString(SessionSettings.DEFAULT_APPLVERID));
-                
+
             }
 
             DataDictionaryProvider dd = new DataDictionaryProvider();
@@ -124,6 +127,8 @@ namespace QuickFix
                 session.ValidateLengthAndChecksum = settings.GetBool(SessionSettings.VALIDATE_LENGTH_AND_CHECKSUM);
             if (settings.Has(SessionSettings.RESETSEQUENCE_MESSAGE_REQUIRES_ORIGSENDINGTIME))
                 session.RequiresOrigSendingTime = settings.GetBool(SessionSettings.RESETSEQUENCE_MESSAGE_REQUIRES_ORIGSENDINGTIME);
+            if (settings.Has(SessionSettings.ENCODING))
+                session.Encoding = Encoding.GetEncoding(settings.GetString(SessionSettings.ENCODING));
 
             return session;
         }
@@ -158,7 +163,7 @@ namespace QuickFix
         protected void ProcessFixTDataDictionaries(SessionID sessionID, Dictionary settings, DataDictionaryProvider provider)
         {
             provider.AddTransportDataDictionary(sessionID.BeginString, createDataDictionary(sessionID, settings, SessionSettings.TRANSPORT_DATA_DICTIONARY, sessionID.BeginString));
-    
+
             foreach (KeyValuePair<string, string> setting in settings)
             {
                 if (setting.Key.StartsWith(SessionSettings.APP_DATA_DICTIONARY, System.StringComparison.CurrentCultureIgnoreCase))

@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Text;
 
 namespace QuickFix.Fields
 {
@@ -76,7 +76,7 @@ namespace QuickFix.Fields
                 return false;
 
             FieldBase<T> f = (FieldBase<T>)obj;
-            return this.Tag == f.Tag && this.Obj.Equals(f.Obj);
+            return Tag == f.Tag && Obj.Equals(f.Obj);
         }
 
         public override int GetHashCode()
@@ -87,23 +87,23 @@ namespace QuickFix.Fields
         /// <summary>
         /// length of formatted field (including tag=val\001)
         /// </summary>
-        public override int getLength()
+        public override int getLength(Encoding encoding)
         {
             if (_changed)
                 makeStringFields();
-            return System.Text.Encoding.UTF8.GetByteCount(_stringField) + 1; // +1 for SOH
+            return encoding.GetByteCount(_stringField) + 1; // +1 for SOH
         }
 
         /// <summary>
         /// checksum
         /// </summary>
-        public override int getTotal()
+        public override int getTotal(Encoding encoding)
         {
             if (_changed)
                 makeStringFields();
 
             int sum = 0;
-            byte[] array = System.Text.Encoding.UTF8.GetBytes(_stringField);
+            byte[] array = encoding.GetBytes(_stringField);
             foreach (byte b in array)
             {
                 sum += b;
